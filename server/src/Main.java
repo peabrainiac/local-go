@@ -1,50 +1,49 @@
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.Scanner;
+import java.net.InetSocketAddress;
+import java.net.URI;
+
+import com.sun.net.httpserver.Headers;
+import com.sun.net.httpserver.HttpContext;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpPrincipal;
+import com.sun.net.httpserver.HttpServer;
 
 public class Main {
-    public static void main(String[] args) {
-        startServer();
-    }
 
-    /**
-     * Startet den Server
-     */
-    public static void startServer() {
-        //Inintialisiert einen Server Socket auf port 8080 (Muss in extra thread für multiple connections)
-        try(ServerSocket serverSocket = new ServerSocket(8080)) {
-            Socket connectionSocket = serverSocket.accept();
+  public static void main(String[] args) throws IOException {
+      HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+      HttpContext context = server.createContext("/");
+      context.setHandler(Main::handleRequest);
+      server.start();
+  }
 
-            //Streams für Kommunikation
-            InputStream inputToServer = connectionSocket.getInputStream();
-            OutputStream outputFromServer = connectionSocket.getOutputStream();
-            
-            //Scanner bekommt input vom Server.inputStream
-            Scanner inputScanner = new Scanner(inputToServer, "UTF-8");
-            //Print Writer für den Output vom Server
-            PrintWriter outputWriter = new PrintWriter(new OutputStreamWriter(outputFromServer, "UTF-8"), true);
+  private static void handleRequest(HttpExchange exchange) throws IOException {
+      URI requestURI = exchange.getRequestURI();
+      printRequestInfo(exchange);
+      String response = "This is the response at " + requestURI;
+      exchange.sendResponseHeaders(200, response.getBytes().length);
+      OutputStream os = exchange.getResponseBody();
+      os.write(response.getBytes());
+      os.close();
+  }
 
-            outputWriter.println("Standardnachricht, 'exit' fuer das Verlassen");
+  private static void printRequestInfo(HttpExchange exchange) {
+      System.out.println("-- headers --");
+      Headers requestHeaders = exchange.getRequestHeaders();
+      requestHeaders.entrySet().forEach(System.out::println);
 
-            //Infinite loop fürs scannen von nachrichten
-            boolean done = false;
-            //Muss auch in extra thread für 2 connections
-            	//vielleicht das while auseinanderziehen in ein wile(!done) und ein if(scanner.hasNext) und dann in das if nen Wait um nicht zu oft zu checken ob neue Nachrichten da sind
-            while(!done && inputScanner.hasNextLine()) {
-                String line = inputScanner.nextLine();
-                outputWriter.println("Echo vom Server: " + line);
-                //wenn line = exit, break;
-                if(line.toLowerCase().trim().equals("exit")) {
-                    done = true;
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+      System.out.println("-- principle --");
+      HttpPrincipal principal = exchange.getPrincipal();
+      System.out.println(principal);
+
+      System.out.println("-- HTTP method --");
+      String requestMethod = exchange.getRequestMethod();
+      System.out.println(requestMethod);
+
+      System.out.println("-- query --");
+      URI requestURI = exchange.getRequestURI();
+      String query = requestURI.getQuery();
+      System.out.println(query);
+  }
 }
