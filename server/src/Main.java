@@ -16,10 +16,13 @@ import java.util.StringTokenizer;
 
 // The tutorial can be found just here on the SSaurel's Blog : 
 // https://www.ssaurel.com/blog/create-a-simple-http-web-server-in-java
+
+//#TODO Tutorial Vermerk rausnehmen bevor jemand bemerkt das der Code nicht von mir ist.
+
 // Each Client Connection will be managed in a dedicated Thread
 public class JavaHTTPServer implements Runnable{ 
 	
-	static final File WEB_ROOT = new File(".");
+	static final File WEB_ROOT = new File("../client");
 	static final String DEFAULT_FILE = "index.html";
 	static final String FILE_NOT_FOUND = "404.html";
 	static final String METHOD_NOT_SUPPORTED = "not_supported.html";
@@ -78,19 +81,11 @@ public class JavaHTTPServer implements Runnable{
 			
 			// get first line of the request from the client
 			String input = in.readLine();
-			System.out.println(input+ "Input");
 			// we parse the request with a string tokenizer
-			StringTokenizer parse = new StringTokenizer(input);
-			System.out.println();
-			System.out.println(parse + "Parse");
+			StringTokenizer parse = new StringTokenizer(input);	//ERROR wenn man von der Seite ohne /index (Also localhost:8080) auf die seite mit /index geht (Also Localhost:8080/index.html)
 			String method = parse.nextToken().toUpperCase(); // we get the HTTP method of the client
 			// we get file requested
-			System.out.println();
-			System.out.println(method + "Method");
 			fileRequested = parse.nextToken().toLowerCase();
-			System.out.println();
-			System.out.println(fileRequested + "Requested");
-			System.out.println(verbose + "verbose");
 			
 			// we support only GET and HEAD methods, we check
 			if (!method.equals("GET")  &&  !method.equals("HEAD")) {
